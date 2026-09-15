@@ -6,13 +6,9 @@ Use the same logical pipeline everywhere: inspect PDF, render pages, OCR with co
 
 ### Shared Python Dependencies
 
-Install these into the active Python environment when the host does not already provide equivalents:
+Run [environment preparation](environment-setup.md) first. Do not install every backend listed in this reference. Choose one PDF renderer and one OCR backend, reuse working equivalents, and add only the packages the conversion code actually imports. Use a task-local virtual environment for new Python dependencies.
 
-```bash
-python -m pip install pillow pypdf lxml pymupdf pypdfium2 opencv-python
-```
-
-Use `pypdf` to inspect metadata and confirm whether a text layer exists. Use `PyMuPDF` or `pypdfium2` to render pages when Poppler is unavailable.
+Typical roles: `pypdf` for metadata/text-layer inspection; `PyMuPDF` **or** `pypdfium2` for rendering; `Pillow` for images; `numpy` or `opencv-python` for image analysis. Python's standard `zipfile` and `xml.etree.ElementTree` can package and structurally validate EPUB without installing `lxml`.
 
 ### macOS
 
@@ -28,14 +24,7 @@ Use `pypdf` to inspect metadata and confirm whether a text layer exists. Use `Py
 
 ### Windows
 
-Recommended local stack:
-
-```powershell
-py -m venv .venv
-.\.venv\Scripts\Activate.ps1
-python -m pip install --upgrade pip
-python -m pip install paddleocr paddlepaddle opencv-python pillow pypdf lxml pymupdf pypdfium2
-```
+Prepare an isolated Python environment as described in [environment setup](environment-setup.md), then choose a compatible PaddleOCR/PaddlePaddle combination for that interpreter and machine. Check the backend's official installation guidance and installed API version before using the illustrative OCR code below; package installation alone does not download or validate all required Chinese models.
 
 Notes:
 - Use PaddleOCR as the first Windows OCR choice for Chinese books. It is usually better than Tesseract on dense classical Chinese scans.

@@ -9,6 +9,14 @@ description: Use when scanned Chinese PDFs or image-only books need text EPUB co
 
 Convert scanned Chinese PDFs into readable text EPUBs without losing editorial aids such as underlined names. The workflow is cross-platform: choose OCR and rendering tools available on the user's machine, verify a small sample first, then scale.
 
+## Environment Preparation
+
+Start every conversion with an environment check; the user should not need to ask separately for tool installation. Follow [environment setup](references/environment-setup.md) to detect the OS and usable runtimes, reuse host-provided tools, and install only missing dependencies for the chosen pipeline in a task-local virtual environment. Reuse a previously verified environment when its executable paths still work.
+
+Explain the selected tools briefly and continue within the user's existing authorization. Do not require confirmation for each routine local dependency. For system-level installation, paid services, or uploading book content, check existing authorization and host permissions; ask only for the concrete missing authorization. Do not silently switch from local to cloud OCR.
+
+Before processing the whole book, run one real body page through rendering, Chinese OCR with coordinates, and a minimal text EPUB package. An installed command or successful import alone does not establish readiness. If setup fails, diagnose the error or choose an available equivalent; report the exact blocker rather than claiming the environment is ready.
+
 ## Workflow
 
 1. Inspect the PDF.

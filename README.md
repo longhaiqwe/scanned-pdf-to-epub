@@ -47,6 +47,20 @@ After installing, start a new Codex / Claude Code session, then ask:
 Use scanned-pdf-to-epub to convert this scanned Chinese PDF into a text EPUB for WeRead.
 ```
 
+## 首次使用与依赖准备
+
+使用者只需安装整个 Skill 并提供 PDF，不必另外提醒 Agent 下载工具。Agent 会：
+
+1. 检查操作系统、Python、PDF 渲染工具和中文 OCR 引擎。
+2. 优先复用本机或 Agent 宿主提供的环境，例如 Codex 自带工具。
+3. 只为选定方案补装缺失依赖，Python 包放入任务目录的虚拟环境。
+4. 系统级安装、付费服务或上传书籍时，检查已有授权，只就缺少的必要授权询问。
+5. 用一页真实正文验证渲染、OCR 坐标和 EPUB 打包，再开始全书转换。
+
+Skill 不捆绑 Python、OCR 引擎或模型，也不是独立的一键转换程序。Agent 需要有本地命令执行能力；补装工具或首次下载 OCR 模型时需要网络。受限环境中无法补齐依赖时，Agent 会说明缺少什么以及具体安装方式。
+
+详见 [环境检查与安装流程](references/environment-setup.md)。
+
 ## Paragraph Helpers And Checks
 
 `[x, y, width, height]` 坐标采用左上角为原点。先对每页、每个正文栏分别合并同一行的 OCR 碎片，再按该页正文区域计算字符缩进，并用同一个段落缓冲器处理跨页续接。辅助脚本支持横排散文；缩进层级和行容差需按原书校准，不直接适用于竖排、诗歌或表格。
