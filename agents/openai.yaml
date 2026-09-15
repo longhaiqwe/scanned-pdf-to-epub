@@ -1,4 +1,4 @@
 interface:
-  display_name: "Scanned PDF To WeRead EPUB"
+  display_name: "Scanned PDF To EPUB"
   short_description: "Cross-platform OCR EPUB workflow for Chinese scanned books"
-  default_prompt: "Use $scanned-pdf-to-weread-epub to convert this scanned Chinese PDF into a text EPUB with WeRead-friendly proper-name marking. Choose OCR tools that fit the user's OS, including Windows alternatives such as PaddleOCR."
+  default_prompt: "Use $scanned-pdf-to-epub to convert this scanned Chinese PDF into a text EPUB with WeRead-friendly proper-name marking. Choose OCR tools that fit the user's OS, including Windows alternatives such as PaddleOCR."

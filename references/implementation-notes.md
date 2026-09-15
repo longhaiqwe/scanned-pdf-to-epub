@@ -86,6 +86,46 @@ PaddleOCR commonly returns line boxes rather than reliable per-character boxes. 
 - If a public or user-provided text source exists, use it as校对底稿. Keep the edition in mind; do not blindly replace OCR if wording differs from the scanned edition.
 - On Windows/PaddleOCR, expect more line-level boxes. Preserve the OCR line text and use校对 text to fix characters, but keep the PDF-derived line breaks until section structure is stable.
 
+## Paragraph Reconstruction Across Pages
+
+Keep source page IDs and line boxes until paragraph reconstruction is complete. Apply the same reconstruction to front matter, prefaces, afterwords and the main text. Do not wrap each PDF page in its own `<p>` or insert `<br/>` at scan-page boundaries.
+
+1. Remove running titles and page numbers using their marginal position **and** narrow geometry. Verify that this does not remove full-width lines when the scan shifts left or right. Cluster fragments with overlapping vertical extents into logical lines and order each row left-to-right before testing indentation; a right-hand OCR fragment is not a new paragraph.
+2. Estimate the prose region and character pitch for each page, using full lines, adjacent comparable pages and source images. Compare a line's left edge with its **own page's region**, not the previous page's raw x coordinate. Do not blindly use the most frequent left edge: a page dominated by inset commentary can shift that estimate.
+3. Carry the open paragraph and block style to the next page. Continue a nonindented first line without adding a newline or space between Chinese characters. Start a new paragraph only with positive evidence such as first-line indentation relative to that block, a heading or an explicit section transition. A sentence-ending full stop alone does not prove a paragraph boundary; absence of punctuation alone does not override a real heading.
+4. Preserve inset commentary: in an edition with two-character block indentation and an additional two-character first-line indentation, offset 4 starts a paragraph within the block, offset 2 continues it, and offset 0 returns to ordinary prose. A short completed last line followed by an offset-2 first line can indicate a return to ordinary prose; verify this against the scan and supply the line-end gap to the helper. Calibrate these levels to the actual edition. The optional `scripts/paragraphs.py` implements this specific horizontal-prose pattern; supply normalized character offsets and reset at section boundaries. Signatures, poetry, tables and vertical text require separate layout handling.
+5. Record each page transition with the previous tail, next head, decision and geometry. Review uncertain transitions against both source pages. Assert the final XHTML holds verified continued phrases in a single paragraph, while preserving known true paragraph starts. Check text conservation so paragraph repairs do not drop, reorder or duplicate lines.
+
+Regression examples from a scanned *通鉴纪事本末* first volume:
+
+- PDF pages 9–10: `藩镇之乱` + `则令孜之为也` belongs to one paragraph in the original 序. A per-page paragraph wrapper incorrectly separates it.
+- PDF page 40: `蜀既属秦，秦以益强富厚，轻诸侯。` and `燕王哙以国让其相` are OCR fragments of the same printed row. Merge them before indentation detection; otherwise the right-hand fragment becomes a false paragraph. Assert the next row `子之。` remains in that paragraph. Run this regression against the **body** assembly path, not just the front-matter helper.
+- A genuine paragraph may begin at the top of the next page; retain its source indentation rather than merging every page boundary.
+- Inset commentary can continue onto a page containing ordinary prose below it. Its two-character block margin must not turn every commentary line into a new paragraph.
+- Full-width lines in front matter may shift slightly beyond a fixed margin cutoff; do not delete them while filtering narrow running titles.
+
+### Using The Helpers
+
+```python
+from paragraphs import merge_logical_rows, Paragraphs
+
+paragraphs = Paragraphs()  # Keep this instance across pages of one section.
+# For each page and each horizontal prose column, after removing margins:
+rows = merge_logical_rows(ocr_lines, center_tolerance=calibrated_tolerance)
+for row in rows:
+    x, y, width, height = row["box"]
+    # Use row["chars"] with the original page image for proper-name detection.
+    paragraphs.feed(
+        row["text"], rendered_markup(row), page=page_number,
+        offset_chars=(x - region_left) / character_pitch,
+        end_gap_chars=(region_right - x - width) / character_pitch,
+    )
+# At a real section boundary, finish and start a fresh accumulator.
+html_paragraphs = paragraphs.finish()
+```
+
+`center_tolerance` uses the same units as the OCR boxes and must be less than the separation between adjacent printed rows. Feed one page/column at a time; preserve the resulting row order. The example leaves region detection, escaping and semantic markup to the caller, because these depend on the source edition and OCR backend.
+
 ## Underline Detection Heuristic
 
 Use character boxes, or estimated character positions, to detect original printed name underlines:
@@ -196,12 +236,12 @@ In the final response, state which file is recommended for which reader.
 
 For Claude Code users, install this skill at:
 
-- macOS/Linux: `~/.claude/skills/scanned-pdf-to-weread-epub`
-- Windows: `%USERPROFILE%\.claude\skills\scanned-pdf-to-weread-epub`
+- macOS/Linux: `~/.claude/skills/scanned-pdf-to-epub`
+- Windows: `%USERPROFILE%\.claude\skills\scanned-pdf-to-epub`
 
 For Codex users, install at:
 
-- macOS/Linux: `~/.codex/skills/scanned-pdf-to-weread-epub`
-- Windows: `%USERPROFILE%\.codex\skills\scanned-pdf-to-weread-epub`
+- macOS/Linux: `~/.codex/skills/scanned-pdf-to-epub`
+- Windows: `%USERPROFILE%\.codex\skills\scanned-pdf-to-epub`
 
 When sharing publicly, mention that OCR quality depends on the selected OCR backend. The skill is a workflow and compatibility guide; it does not bundle Apple Vision, PaddleOCR models, cloud OCR credentials, or copyrighted source texts.
