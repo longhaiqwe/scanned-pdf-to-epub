@@ -1,89 +1,47 @@
-# scanned-pdf-to-epub
+# 扫描版 PDF 转 EPUB
 
-一个用于把扫描版中文 PDF / 图片书转换成文字版 EPUB 的 Agent Skill，重点处理：
+把扫描版中文书转换成可以调字号、搜索和划线的 EPUB，方便在微信读书等阅读器里阅读。
 
-- 可搜索、可重排的 OCR 文字版 EPUB
-- 跨页段落续接，以及同一行 OCR 碎片合并
-- 前记、序跋和正文统一处理，保留真实段落与缩进评注
-- 原书下划线专名号 / 人名标记的保留
-- 微信读书 App 和网页版的兼容差异
-- macOS、Windows、Linux 的 OCR 工具选择
+这是一个给 **Codex、Claude Code 等 AI 助手**使用的 Skill。你把书交给助手，它会按照这个 Skill 完成转换。
 
-## Install For Codex
+## 适合什么书？
 
-macOS / Linux:
+- 每页都是图片、无法选中文字的 PDF。
+- 想放进阅读器里，按自己喜欢的字号阅读的中文书。
+- 带有人名、地名下划线等标记，希望转换后尽量保留提示的古籍。
 
-```bash
-mkdir -p ~/.codex/skills
-git clone https://github.com/longhaiqwe/scanned-pdf-to-epub.git ~/.codex/skills/scanned-pdf-to-epub
-```
+目前更适合横排中文书。竖排、模糊扫描或复杂排版的书，需要更多检查。
 
-Windows PowerShell:
+## 怎么安装？
 
-```powershell
-New-Item -ItemType Directory -Force "$env:USERPROFILE\.codex\skills" | Out-Null
-git clone https://github.com/longhaiqwe/scanned-pdf-to-epub.git "$env:USERPROFILE\.codex\skills\scanned-pdf-to-epub"
-```
-
-## Install For Claude Code
-
-macOS / Linux:
-
-```bash
-mkdir -p ~/.claude/skills
-git clone https://github.com/longhaiqwe/scanned-pdf-to-epub.git ~/.claude/skills/scanned-pdf-to-epub
-```
-
-Windows PowerShell:
-
-```powershell
-New-Item -ItemType Directory -Force "$env:USERPROFILE\.claude\skills" | Out-Null
-git clone https://github.com/longhaiqwe/scanned-pdf-to-epub.git "$env:USERPROFILE\.claude\skills\scanned-pdf-to-epub"
-```
-
-After installing, start a new Codex / Claude Code session, then ask:
+把下面这句话发给你的 AI 助手：
 
 ```text
-Use scanned-pdf-to-epub to convert this scanned Chinese PDF into a text EPUB for WeRead.
+请帮我安装这个 Skill：
+https://github.com/longhaiqwe/scanned-pdf-to-epub
 ```
 
-## 首次使用与依赖准备
+安装完成后，新开一个对话使用。
 
-使用者只需安装整个 Skill 并提供 PDF，不必另外提醒 Agent 下载工具。Agent 会：
+## 怎么用？
 
-1. 检查操作系统、Python、PDF 渲染工具和中文 OCR 引擎。
-2. 优先复用本机或 Agent 宿主提供的环境，例如 Codex 自带工具。
-3. 只为选定方案补装缺失依赖，Python 包放入任务目录的虚拟环境。
-4. 系统级安装、付费服务或上传书籍时，检查已有授权，只就缺少的必要授权询问。
-5. 用一页真实正文验证渲染、OCR 坐标和 EPUB 打包，再开始全书转换。
+把 PDF 文件发给助手，再说：
 
-Skill 不捆绑 Python、OCR 引擎或模型，也不是独立的一键转换程序。Agent 需要有本地命令执行能力；补装工具或首次下载 OCR 模型时需要网络。受限环境中无法补齐依赖时，Agent 会说明缺少什么以及具体安装方式。
-
-详见 [环境检查与安装流程](references/environment-setup.md)。
-
-## Paragraph Helpers And Checks
-
-`[x, y, width, height]` 坐标采用左上角为原点。先对每页、每个正文栏分别合并同一行的 OCR 碎片，再按该页正文区域计算字符缩进，并用同一个段落缓冲器处理跨页续接。辅助脚本支持横排散文；缩进层级和行容差需按原书校准，不直接适用于竖排、诗歌或表格。
-
-```bash
-python3 -m unittest discover -s scripts -p 'test_*.py' -v
+```text
+请用 scanned-pdf-to-epub 把这本书转换成文字版 EPUB，
+我想放进微信读书里阅读。
 ```
 
-测试覆盖跨页续句、真实新段落、缩进评注、同一行碎片合并及字符坐标保留。详见 [段落重建说明](references/implementation-notes.md#paragraph-reconstruction-across-pages)。
+助手会先检查需要的工具，试转一小部分，再处理整本书。你不必提前研究该安装哪些工具；需要你操作时，它会说明。
 
-EPUB 的 ZIP/XML 检查与阅读器显示验证是两件事。微信读书网页版仍需实测分栏边界是否缺字；遇到文字在文件中完整、界面却缺失时，应检查导入解析和排版，并以去除专名样式的版本作对照，不能据此直接认定是字体问题或已解决。
+转换结束后，你会得到一个 EPUB 文件，可以导入阅读器。页数较多的书需要耐心等待。
 
-## Windows OCR Notes
+## 转换后需要检查什么？
 
-This skill does not require Apple Vision OCR. On Windows, prefer:
+识别图片中的文字可能出错，尤其是生僻人名、地名和标点。阅读时发现问题，可以把原书和转换结果一起发给助手，请它对照修正。
 
-- PaddleOCR for local Chinese OCR
-- PyMuPDF or pypdfium2 for PDF rendering
-- Tesseract only as a fallback for cleaner/simple scans
-- Azure/Baidu/Tencent/Google/ABBYY OCR when cloud OCR is acceptable
+不同阅读器的显示效果也可能不同。导入后建议先检查目录、段落和翻页处，确认没有缺字或异常空白。重要内容引用前，请核对原书。
 
-See [implementation notes](references/implementation-notes.md) for details.
+## 许可
 
-## License
-
-MIT
+[MIT](LICENSE)
